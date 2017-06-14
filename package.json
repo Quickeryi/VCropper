@@ -1,0 +1,27 @@
+{
+  "name": "v-cropper",
+  "version": "1.0.0",
+  "description": "基于vue2.x的图片裁剪器",
+  "main": "index.js",
+  "directories": {
+    "example": "example"
+  },
+  "scripts": {
+    "dev": "",
+    "release": ""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Quickeryi/VCropper.git"
+  },
+  "keywords": [
+    "vue2.x",
+    "cropper"
+  ],
+  "author": "yiwei",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Quickeryi/VCropper/issues"
+  },
+  "homepage": "https://github.com/Quickeryi/VCropper#readme"
+}
