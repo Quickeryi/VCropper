@@ -13,7 +13,8 @@ import Vue from 'vue';
 Vue.use(VCropper);
 
 <VCropper
-   :img=img_src
+   :id="id"
+   :img="img_src"
    //others init params
 >
 </VCropper>
@@ -21,11 +22,15 @@ Vue.use(VCropper);
 ### 参数
 名称 | 说明 | 参数值 | 备注
 --- | ----| ------| ----
+id | 子组件引用 | `[String]`  | [可选，默认为`vcropper`]，此参数涉及到调用组建方法，所以很重要
 img | 裁切图片地址 | `[String]` `url`或`base64`或`blob`地址 | [可选，默认为空]
 autoCrop | 初始组建时，是否展示裁切框 | `[Boolean]` `true`或`false` | [可选，默认为`true`]
 initSize | 初始组建时，裁切框初始大小 | `[Object]` {`w`: 有效的css大小值, `h`: 有效的css大小值} | [可选，默认为{`w`: '50%', `h`: '50%'}]
 initPosition | 初始组建时，裁切框初始位置 | `[Object]` {`left`: 有效的css位置值, `top`: 有效的css位置值} | [可选，默认为{`left`: '50%', `top`: '50%'}]
 movable | 裁切框是否可移动 | `[Boolean]` `true`或`false` | [可选，默认为`true`]
+imgMovable | 图片否可移动 | `[Boolean]` `true`或`false` | [可选，默认为`false`]
+aspectRatio | 裁切框宽高比 | `[String]` | [可选，默认为`1:1`]
+zoomable | 图片是否可放大缩小 | `[Boolean]` `true`或`false` | [可选，默认为`false`]
 background | 初始组建时，是否展示透明背景图 | [`Boolean`] `true`或`false` | [可选，默认为`true`]
 resizable | 裁切框是否可以改变大小 | [`Boolean`] `true`或`false` | [可选，默认为`true`]
 modal | 裁切时，是否加上蒙层| [`Boolean`] `true`或`false` | [可选，默认为`true`]
