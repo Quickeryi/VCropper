@@ -25,8 +25,8 @@ Vue.use(VCropper);
 id | 子组件引用 | `[String]`  | [可选，默认为`vcropper`]，此参数涉及到调用组建方法，所以很重要
 img | 裁切图片地址 | `[String]` `url`或`base64`或`blob`地址 | [可选，默认为空]
 autoCrop | 初始组建时，是否展示裁切框 | `[Boolean]` `true`或`false` | [可选，默认为`true`]
-initSize | 初始组建时，裁切框初始大小 | `[Object]` {`w`: '% | px', `h`: '% | px'} | [可选，默认为{`w`: '50%', `h`: '50%'}]
-initPosition | 初始组建时，裁切框初始位置 | `[Object]` {`left`: '% | px', `top`: '% | px'} | [可选，默认为{`left`: '50%', `top`: '50%'}]
+initSize | 初始组建时，裁切框初始大小 | `[Object]` {`w`: '%／px', `h`: '%/px'} | [可选，默认为{`w`: '50%', `h`: '50%'}]
+initPosition | 初始组建时，裁切框初始位置 | `[Object]` {`left`: '%／px', `top`: '%／px'} | [可选，默认为{`left`: '50%', `top`: '50%'}]
 movable | 裁切框是否可移动 | `[Boolean]` `true`或`false` | [可选，默认为`true`]
 imgMovable | 图片否可移动 | `[Boolean]` `true`或`false` | [可选，默认为`false`]
 aspectRatio | 裁切框宽高比 | `[String]` | [可选，默认为`1:1`]
