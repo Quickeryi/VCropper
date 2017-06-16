@@ -7,7 +7,8 @@
                 img: 'http://ofyaji162.bkt.clouddn.com/bg1.jpg',
                 initSize: {
                     w: '60%'
-                }
+                },
+                imgMovable: false
             }
         }
     }
@@ -19,7 +20,7 @@
                  :background="background">
 
         </VCopper>-->
-        <VCopper :img="img"></VCopper>
+        <VCopper :img="img" :imgMovable="imgMovable" :initSize="initSize"></VCopper>
     </div>
 </template>
 
