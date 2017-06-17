@@ -8,7 +8,8 @@
                 initSize: {
                     w: '60%'
                 },
-                imgMovable: false
+                imgMovable: false,
+                modal: false
             }
         }
     }
@@ -28,5 +29,6 @@
     .warp {
         width: 700px;
         height: 500px;
+        margin: 100px;
     }
 </style>

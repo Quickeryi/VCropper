@@ -30,6 +30,68 @@ export default class Util {
         return size;
     }
 
+    /**
+     * mousedown | touchstart listener
+     *
+     * @param ev
+     * @param moveListener
+     * @param upListener
+     */
+    static touchDown(ev, moveListener, upListener) {
+        let self = this;
+        self.crop.rect = self.$refs['crop-box'].getBoundingClientRect();
+        self.warpRect = self.$refs['vue-cropper'].getBoundingClientRect();
+        window.addEventListener('mousemove', moveListener);
+        window.addEventListener('touchmove', moveListener);
+        window.addEventListener('mouseup', upListener);
+        window.addEventListener('touchend', upListener);
+        self.crop.coordinate.x = ev.clientX;
+        self.crop.coordinate.y = ev.clientY;
+    }
 
+    /**
+     * mouseup | touchend listener
+     *
+     * @param moveListener
+     * @param upListener
+     */
+    static touchUp(moveListener, upListener) {
+        window.removeEventListener('mousemove', moveListener);
+        window.removeEventListener('mouseup', upListener);
+        window.removeEventListener('touchmove', moveListener);
+        window.removeEventListener('touchend', upListener);
+    }
+
+    /**
+     * 设置裁切框属性
+     *
+     * @param width
+     * @param height
+     * @param cropX
+     * @param cropY
+     */
+    static setCrop({width, height, cropX, cropY} = {}) {
+        let self = this,
+            maxX = self.warpRect.width - width,
+            maxY = self.warpRect.height - height;
+
+        // 计算边界值
+        if (cropX < 0) cropX = 0;
+        if (cropX > maxX) cropX = maxX;
+        if (cropY < 0) cropY = 0;
+        if (cropY > maxY) cropY = maxY;
+
+        // 设置裁切框size
+        self.crop.width = width;
+        self.crop.height = height;
+
+        // 设置裁切框位移量
+        self.crop.translate.x = cropX;
+        self.crop.translate.y = cropY;
+
+        // 设置可视图片位移量
+        self.crop.view.x = self.sourceImage.translate.x - self.crop.translate.x;
+        self.crop.view.y = self.sourceImage.translate.y - self.crop.translate.y;
+    }
 }
 

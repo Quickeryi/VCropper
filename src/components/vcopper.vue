@@ -6,6 +6,11 @@
             return {
                 warpRect: null,
                 crop: { // 裁切框操作时相关的数据
+                    create: {
+                        able: false,
+                        originX: 0,
+                        originY: 0
+                    },
                     rect: null,
                     lines: [
                         {
@@ -51,11 +56,13 @@
                             direction: 'w'
                         }
                     ],
+                    width: 0,
+                    height: 0,
                     view: { // 裁切框可视化图片位置
                         x: 0,
                         y: 0
                     },
-                    coordinate: {
+                    coordinate: { // move时的坐标系
                         originX: 0,
                         originY: 0,
                         x: 0,
@@ -63,12 +70,10 @@
                     },
                     translate: {
                         x: 0,
-                        y: 0,
-                        movable: true
+                        y: 0
                     },
-                    resize: {
-                        resizable: true
-                    }
+                    movable: true,
+                    resizable: true
                 },
                 sourceImage : { // 图片操作时相关的数据
                     loaded: false,
@@ -76,8 +81,13 @@
                     height: 0,
                     translate: {
                         x: 0,
-                        y: 0,
-                        movable: false
+                        y: 0
+                    },
+                    coordinate: { // move时的坐标系
+                        originX: 0, // 原始坐标 x
+                        originY: 0, // 原始坐标 y
+                        x: 0, // 实时坐标 x
+                        y: 0 // 实时坐标 y
                     },
                     aspectRatio: 1
                 }
@@ -159,43 +169,88 @@
              */
             cropMoveStart(ev) {
                 let self = this;
-                if (!self.crop.translate.movable) return;
-                self.crop.rect = self.$refs['crop-box'].getBoundingClientRect();
-                window.addEventListener('mousemove', self.cropMove);
-                window.addEventListener('touchmove', self.cropMove);
-                window.addEventListener('mouseup', self.cropStop);
-                window.addEventListener('touchend', self.cropStop);
-                self.crop.coordinate.x = ev.pageX;
-                self.crop.coordinate.y = ev.pageY;
+                if (!self.crop.movable) return;
+                Util.touchDown.call(self, ev, self.cropMove, self.cropStop);
                 self.crop.coordinate.originX = self.crop.translate.x;
                 self.crop.coordinate.originY = self.crop.translate.y;
             },
 
             cropMove(ev) {
                 let self = this,
-                    disX = ev.pageX - self.crop.coordinate.x,
-                    disY = ev.pageY - self.crop.coordinate.y,
+                    disX = ev.clientX - self.crop.coordinate.x,
+                    disY = ev.clientY - self.crop.coordinate.y,
                     transX,
                     transY,
-                    maxX = self.crop.rect.left - self.warpRect.left,
-                    maxY = self.crop.rect.top - self.warpRect.top;
+                    crop = {
+                        width: 0,
+                        height: 0,
+                        cropX: 0,
+                        cropY: 0
+                    };
+
                 if (!disX && !disY) return;
                 transX = self.crop.coordinate.originX + disX;
                 transY = self.crop.coordinate.originY + disY;
-                if (transX < 0) transX = 0;
-                if (transX > maxX) transX = maxX;
-                if (transY < 0) transY = 0;
-                if (transY > maxY) transY = maxY;
-                self.crop.translate.x = transX;
-                self.crop.translate.y = transY;
+
+                // 设置裁切框size
+                crop.width = self.crop.rect.width;
+                crop.height = self.crop.rect.height;
+
+                // 移动裁切框
+                crop.cropX = transX;
+                crop.cropY = transY;
+
+                Util.setCrop.call(self, crop);
+
+                return false;
             },
 
             cropStop(ev) {
                 let self = this;
-                window.removeEventListener('mousemove', self.cropMove);
-                window.removeEventListener('mouseup', self.cropStop);
-                window.removeEventListener('touchmove', self.cropMove);
-                window.removeEventListener('touchend', self.cropStop);
+                Util.touchUp.call(self, self.cropMove, self.cropStop);
+            },
+
+            /**
+             * 开始生成裁切框
+             */
+            createCropStart(ev) {
+                let self = this;
+                if (self.imgMovable) return;
+                Util.touchDown.call(self, ev, self.createCropMove, self.createCropStop);
+                self.crop.create.able = !!1;
+                self.crop.create.originX = self.crop.coordinate.x - self.warpRect.left;
+                self.crop.create.originY = self.crop.coordinate.y - self.warpRect.top;
+            },
+
+            createCropMove(ev) {
+                let self = this,
+                    disX = ev.clientX - self.crop.coordinate.x,
+                    disY = ev.clientY - self.crop.coordinate.y,
+                    crop = {
+                        width: 0,
+                        height: 0,
+                        cropX: 0,
+                        cropY: 0
+                    };
+
+                // 设置裁切框size
+                crop.width = Math.min(Math.abs(disX), self.warpRect.width);
+                crop.height = Math.min(Math.abs(disY), self.warpRect.height);
+
+                // 设置裁切框位移量
+                crop.cropX = disX >= 0 ? self.crop.create.originX : self.crop.create.originX + disX;
+                crop.cropY = disY >=0 ? self.crop.create.originY : self.crop.create.originY + disY;
+                Util.setCrop.call(self, crop);
+            },
+
+            createCropStop(ev) {
+                let self = this;
+                Util.touchUp.call(self, self.createCropMove, self.createCropStop);
+                self.crop.create.able = !!0;
+            },
+
+            resizeStart(ev) {
+
             },
 
             clear() {
@@ -236,30 +291,27 @@
                 self.initSize.h = self.initSize.h || '50%';
                 self.initPosition.left = self.initPosition.left || '50%';
                 self.initPosition.top = self.initPosition.top || '50%';
-
                 self.sourceImage.translate.x = (self.warpRect.width - self.sourceImage.width)/2;
                 self.sourceImage.translate.y = (self.warpRect.height - self.sourceImage.height)/2;
 
                 // crop
                 if (/%/.test(self.initPosition.left)) {
-                    let w;
                     if (/%/.test(self.initSize.w)) {
-                        w = parseInt(self.initSize.w)*0.01*self.warpRect.width;
+                        self.crop.width = parseInt(self.initSize.w)*0.01*self.warpRect.width;
                     } else {
-                        w = parseInt(self.initSize.w);
+                        self.crop.width = parseInt(self.initSize.w);
                     }
-                    self.crop.translate.x = (self.warpRect.width - w)/2;
+                    self.crop.translate.x = (self.warpRect.width - self.crop.width)/2;
                 } else {
                     self.crop.translate.x = self.initPosition.left;
                 }
                 if (/%/.test(self.initPosition.top)) {
-                    let h;
                     if (/%/.test(self.initSize.h)) {
-                        h = parseInt(self.initSize.h)*0.01*self.warpRect.height;
+                        self.crop.height = parseInt(self.initSize.h)*0.01*self.warpRect.height;
                     } else {
-                        h = parseInt(self.initSize.h);
+                        self.crop.height = parseInt(self.initSize.h);
                     }
-                    self.crop.translate.y = (self.warpRect.height - h)/2;
+                    self.crop.translate.y = (self.warpRect.height - self.crop.height)/2;
                 } else {
                     self.crop.translate.y = self.initPosition.top;
                 }
@@ -301,17 +353,22 @@
                      class="origin-img">
             </div>
             <div class="cropper-modal"
-                 v-show="!!modal && !!sourceImage.loaded"
+                 v-show="!!sourceImage.loaded"
+                 @mousedown.self.stop="createCropStart"
+                 @touchstart.self.stop="createCropStart"
+                 :class="[!!modal || !!crop.create.able ? 'mask' : '']"
                  :style="{
-                    cursor: !!imgMovable ? 'move' : ''
+                    cursor: !!imgMovable ? 'move' : 'crosshair'
                  }">
             </div>
             <div class="cropper-crop-box"
                  ref="crop-box"
                  v-show="!!autoCrop && !!sourceImage.loaded"
+                 @mousedown="resizeStart"
+                 @touchstart="resizeStart"
                  :style="{
-                    width: initSize.w,
-                    height: initSize.h,
+                    width: `${crop.width}px`,
+                    height: `${crop.height}px`,
                     transform: `translate3d(${crop.translate.x}px, ${crop.translate.y}px, 0)`
                  }">
                 <span class="cropper-view-box"
@@ -328,8 +385,8 @@
                          class="view-img">
                 </span>
                 <span class="cropper-face"
-                      @touchstart.self.stop="cropMoveStart"
-                      @mousedown.self.stop="cropMoveStart">
+                      @touchstart.stop.self="cropMoveStart"
+                      @mousedown.stop.self="cropMoveStart">
                 </span>
                 <span v-for="(line, index) in crop.lines"
                       :key="index"
@@ -369,7 +426,7 @@
         bottom: 0;
     }
 
-    .cropper-modal {
+    .cropper-modal.mask {
         background: rgba(0, 0, 0, 0.5);
     }
 

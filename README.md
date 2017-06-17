@@ -29,7 +29,7 @@ initSize | 初始组建时，裁切框初始大小 | `[Object]` {`w`: '% 或 px'
 initPosition | 初始组建时，裁切框初始位置 | `[Object]` {`left`: '% 或 px', `top`: '% 或px'} | [可选，默认为{`left`: '50%', `top`: '50%'}]
 movable | 裁切框是否可移动 | `[Boolean]` `true`或`false` | [可选，默认为`true`]
 imgMovable | 图片否可移动 | `[Boolean]` `true`或`false` | [可选，默认为`false`]
-aspectRatio | 裁切框宽高比 | `[String]` | [可选，默认为`1:1`]
+aspectRatio | 裁切框宽高比 | `[String]` | [可选，默认为`free`]
 zoomable | 图片是否可放大缩小 | `[Boolean]` `true`或`false` | [可选，默认为`false`]
 background | 初始组建时，是否展示透明背景图 | [`Boolean`] `true`或`false` | [可选，默认为`true`]
 resizable | 裁切框是否可以改变大小 | [`Boolean`] `true`或`false` | [可选，默认为`true`]
