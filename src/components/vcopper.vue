@@ -267,7 +267,56 @@
             },
             
             resizeMove(ev) {
-                
+                let self = this,
+                    touch = Util.touches(ev),
+                    disX = ~~(touch.clientX - self.crop.coordinate.x),
+                    disY = ~~(touch.clientY - self.crop.coordinate.y),
+                    origin = {
+                        w: self.crop.resize.originW,
+                        h: self.crop.resize.originH,
+                        x: self.crop.coordinate.originX,
+                        y: self.crop.coordinate.originY
+                    },
+                    crop = {
+                        width: origin.w,
+                        height: origin.h,
+                        cropX: origin.x,
+                        cropY: origin.y
+                    };
+                if (!disX && !disY) return;
+
+                if (self.aspectRatio != 'free') {
+                    let aspectRatio = self.aspectRatio.split(':');
+                    disY = ~~(disX*(aspectRatio[1]/aspectRatio[0]));
+                }
+                if (/w/.test(self.crop.resize.direction)) {
+                    let _width_ = origin.w - disX;
+                    crop.width = _width_ > 0 ? _width_ : Math.abs(disX) - origin.w;
+                    crop.cropX = _width_ > 0 ? origin.x + disX : origin.x + origin.w;
+                    if (self.aspectRatio != 'free') {
+                        crop.height = disX < 0 ? origin.h + Math.abs(disY) : origin.h - Math.abs(disY);
+                        crop.cropY = disX < 0 ? origin.y - Math.abs(disY)/2 : origin.y + Math.abs(disY)/2;
+                    }
+                }
+
+                if (/e/.test(self.crop.resize.direction)) {
+                    let _width_ = origin.w + disX;
+                    crop.width = _width_ > 0 ? _width_ : Math.abs(_width_);
+                    crop.cropX = _width_ > 0 ? origin.x : origin.x - Math.abs(_width_);
+                }
+
+                if (/n/.test(self.crop.resize.direction)) {
+                    let _height_ = origin.h - disY;
+                    crop.height = _height_ > 0 ? _height_ : Math.abs(disY) - origin.h;
+                    crop.cropY = _height_ > 0 ? origin.y + disY : origin.y + origin.h;
+                }
+
+                if (/s/.test(self.crop.resize.direction)) {
+                    let _height_ = origin.h + disY;
+                    crop.height = _height_ > 0 ? _height_ : Math.abs(_height_);
+                    crop.cropY = _height_ > 0 ? origin.y : origin.y - Math.abs(_height_);
+                }
+                Util.setCrop.call(self, crop);
             },
             
             resizeStop(ev) {
