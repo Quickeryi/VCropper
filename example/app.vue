@@ -9,7 +9,8 @@
                     w: '60%'
                 },
                 imgMovable: false,
-                modal: false
+                modal: false,
+                aspectRatio: "3:2"
             }
         }
     }
@@ -21,7 +22,7 @@
                  :background="background">
 
         </VCopper>-->
-        <VCopper :img="img" :imgMovable="imgMovable" :initSize="initSize"></VCopper>
+        <VCopper :img="img" :imgMovable="imgMovable" :initSize="initSize" :aspectRatio="aspectRatio"></VCopper>
     </div>
 </template>
 

@@ -7,6 +7,10 @@
  * @data 2017-06-14
  */
 export default class Util {
+    static touches(ev) {
+        return  ev.clientX ? ev : ev.touches[0];
+    }
+
     /**
      * 根据容器与图片原始大小信息，返回最终展示的大小
      *
@@ -22,10 +26,10 @@ export default class Util {
             size.width = size.height = Math.min(warp.height, warp.width);
         } else if (img.aspectRatio > 1) { // 宽 > 高
             size.width = warp.width;
-            size.height = warp.width * 1/img.aspectRatio;
+            size.height = ~~(warp.width * 1/img.aspectRatio);
         } else {
             size.height = warp.height;
-            size.width = warp.height * img.aspectRatio;
+            size.width = ~~(warp.height * img.aspectRatio);
         }
         return size;
     }
@@ -38,15 +42,15 @@ export default class Util {
      * @param upListener
      */
     static touchDown(ev, moveListener, upListener) {
-        let self = this;
-        self.crop.rect = self.$refs['crop-box'].getBoundingClientRect();
-        self.warpRect = self.$refs['vue-cropper'].getBoundingClientRect();
+        let self = this,
+            touch = Util.touches(ev);
         window.addEventListener('mousemove', moveListener);
         window.addEventListener('touchmove', moveListener);
         window.addEventListener('mouseup', upListener);
         window.addEventListener('touchend', upListener);
-        self.crop.coordinate.x = ev.clientX;
-        self.crop.coordinate.y = ev.clientY;
+        self.warpRect = self.$refs['vue-cropper'].getBoundingClientRect();
+        self.crop.coordinate.x = touch.clientX;
+        self.crop.coordinate.y = touch.clientY;
     }
 
     /**
@@ -72,8 +76,8 @@ export default class Util {
      */
     static setCrop({width, height, cropX, cropY} = {}) {
         let self = this,
-            maxX = self.warpRect.width - width,
-            maxY = self.warpRect.height - height;
+            maxX = ~~(self.warpRect.width - width),
+            maxY = ~~(self.warpRect.height - height);
 
         // 计算边界值
         if (cropX < 0) cropX = 0;
@@ -90,8 +94,8 @@ export default class Util {
         self.crop.translate.y = cropY;
 
         // 设置可视图片位移量
-        self.crop.view.x = self.sourceImage.translate.x - self.crop.translate.x;
-        self.crop.view.y = self.sourceImage.translate.y - self.crop.translate.y;
+        self.crop.view.x = ~~(self.sourceImage.translate.x - self.crop.translate.x);
+        self.crop.view.y = ~~(self.sourceImage.translate.y - self.crop.translate.y);
     }
 }
 

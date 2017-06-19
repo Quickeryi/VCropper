@@ -14,19 +14,19 @@
                     rect: null,
                     lines: [
                         {
-                            direction: 'top',
+                            direction: 'n',
                             size: 'height'
                         },
                         {
-                            direction: 'bottom',
+                            direction: 's',
                             size: 'height'
                         },
                         {
-                            direction: 'left',
+                            direction: 'w',
                             size: 'width'
                         },
                         {
-                            direction: 'right',
+                            direction: 'e',
                             size: 'width'
                         }
                     ],
@@ -62,7 +62,7 @@
                         x: 0,
                         y: 0
                     },
-                    coordinate: { // move时的坐标系
+                    coordinate: { // move 或 resize 时的坐标系
                         originX: 0,
                         originY: 0,
                         x: 0,
@@ -72,8 +72,11 @@
                         x: 0,
                         y: 0
                     },
-                    movable: true,
-                    resizable: true
+                    resize: {
+                        originW: 0,
+                        originH: 0,
+                        direction: ''
+                    }
                 },
                 sourceImage : { // 图片操作时相关的数据
                     loaded: false,
@@ -83,7 +86,7 @@
                         x: 0,
                         y: 0
                     },
-                    coordinate: { // move时的坐标系
+                    coordinate: { // move 或 resize 时的坐标系
                         originX: 0, // 原始坐标 x
                         originY: 0, // 原始坐标 y
                         x: 0, // 实时坐标 x
@@ -124,7 +127,7 @@
             },
             aspectRatio: {
                 type: String,
-                default: "1:1"
+                default: "free"
             },
             zoomable: {
                 type: Boolean,
@@ -169,7 +172,7 @@
              */
             cropMoveStart(ev) {
                 let self = this;
-                if (!self.crop.movable) return;
+                if (!self.movable) return;
                 Util.touchDown.call(self, ev, self.cropMove, self.cropStop);
                 self.crop.coordinate.originX = self.crop.translate.x;
                 self.crop.coordinate.originY = self.crop.translate.y;
@@ -177,8 +180,9 @@
 
             cropMove(ev) {
                 let self = this,
-                    disX = ev.clientX - self.crop.coordinate.x,
-                    disY = ev.clientY - self.crop.coordinate.y,
+                    touch = Util.touches(ev),
+                    disX = ~~(touch.clientX - self.crop.coordinate.x),
+                    disY = ~~(touch.clientY - self.crop.coordinate.y),
                     transX,
                     transY,
                     crop = {
@@ -187,14 +191,13 @@
                         cropX: 0,
                         cropY: 0
                     };
-
                 if (!disX && !disY) return;
                 transX = self.crop.coordinate.originX + disX;
                 transY = self.crop.coordinate.originY + disY;
 
                 // 设置裁切框size
-                crop.width = self.crop.rect.width;
-                crop.height = self.crop.rect.height;
+                crop.width = self.crop.width;
+                crop.height = self.crop.height;
 
                 // 移动裁切框
                 crop.cropX = transX;
@@ -218,14 +221,15 @@
                 if (self.imgMovable) return;
                 Util.touchDown.call(self, ev, self.createCropMove, self.createCropStop);
                 self.crop.create.able = !!1;
-                self.crop.create.originX = self.crop.coordinate.x - self.warpRect.left;
-                self.crop.create.originY = self.crop.coordinate.y - self.warpRect.top;
+                self.crop.create.originX = ~~(self.crop.coordinate.x - self.warpRect.left);
+                self.crop.create.originY = ~~(self.crop.coordinate.y - self.warpRect.top);
             },
 
             createCropMove(ev) {
                 let self = this,
-                    disX = ev.clientX - self.crop.coordinate.x,
-                    disY = ev.clientY - self.crop.coordinate.y,
+                    touch = Util.touches(ev),
+                    disX = ~~(touch.clientX - self.crop.coordinate.x),
+                    disY = ~~(touch.clientY - self.crop.coordinate.y),
                     crop = {
                         width: 0,
                         height: 0,
@@ -250,7 +254,74 @@
             },
 
             resizeStart(ev) {
+                let self = this,
+                    target = ev.target,
+                    direction = target.dataset.target;
+                if (!self.resizable) return;
+                Util.touchDown.call(self, ev, self.resizeMove, self.resizeStop);
+                self.crop.resize.originW = self.crop.width;
+                self.crop.resize.originH = self.crop.height;
+                self.crop.coordinate.originX = self.crop.translate.x;
+                self.crop.coordinate.originY = self.crop.translate.y;
+                self.crop.resize.direction = /\w+-(\w+)/gi.exec(direction)[1];
+            },
+            
+            resizeMove(ev) {
+                let self = this,
+                    touch = Util.touches(ev),
+                    disX = ~~(touch.clientX - self.crop.coordinate.x),
+                    disY = ~~(touch.clientY - self.crop.coordinate.y),
+                    origin = {
+                        w: self.crop.resize.originW,
+                        h: self.crop.resize.originH,
+                        x: self.crop.coordinate.originX,
+                        y: self.crop.coordinate.originY
+                    },
+                    crop = {
+                        width: origin.w,
+                        height: origin.h,
+                        cropX: origin.x,
+                        cropY: origin.y
+                    };
+                if (!disX && !disY) return;
 
+                if (self.aspectRatio != 'free') {
+                    let aspectRatio = self.aspectRatio.split(':');
+                    disY = ~~(disX*(aspectRatio[1]/aspectRatio[0]));
+                }
+                if (/w/.test(self.crop.resize.direction)) {
+                    let _width_ = origin.w - disX;
+                    crop.width = _width_ > 0 ? _width_ : Math.abs(disX) - origin.w;
+                    crop.cropX = _width_ > 0 ? origin.x + disX : origin.x + origin.w;
+                    if (self.aspectRatio != 'free') {
+                        crop.height = disX < 0 ? origin.h + Math.abs(disY) : origin.h - Math.abs(disY);
+                        crop.cropY = disX < 0 ? origin.y - Math.abs(disY)/2 : origin.y + Math.abs(disY)/2;
+                    }
+                }
+
+                if (/e/.test(self.crop.resize.direction)) {
+                    let _width_ = origin.w + disX;
+                    crop.width = _width_ > 0 ? _width_ : Math.abs(_width_);
+                    crop.cropX = _width_ > 0 ? origin.x : origin.x - Math.abs(_width_);
+                }
+
+                if (/n/.test(self.crop.resize.direction)) {
+                    let _height_ = origin.h - disY;
+                    crop.height = _height_ > 0 ? _height_ : Math.abs(disY) - origin.h;
+                    crop.cropY = _height_ > 0 ? origin.y + disY : origin.y + origin.h;
+                }
+
+                if (/s/.test(self.crop.resize.direction)) {
+                    let _height_ = origin.h + disY;
+                    crop.height = _height_ > 0 ? _height_ : Math.abs(_height_);
+                    crop.cropY = _height_ > 0 ? origin.y : origin.y - Math.abs(_height_);
+                }
+                Util.setCrop.call(self, crop);
+            },
+            
+            resizeStop(ev) {
+                let self = this;
+                Util.touchUp.call(self, self.resizeMove, self.resizeStop);
             },
 
             clear() {
@@ -270,6 +341,10 @@
             },
 
             getImageData() {
+
+            },
+
+            crop() {
 
             },
 
@@ -318,10 +393,10 @@
 
                 // crop view image
                 this.$nextTick(() => {
+                    let rect = refs['crop-box'].getBoundingClientRect();
                     let originRect = refs['origin-img'].getBoundingClientRect();
-                    self.crop.rect = refs['crop-box'].getBoundingClientRect();
-                    self.crop.view.x = originRect.left - self.crop.rect.left;
-                    self.crop.view.y = originRect.top - self.crop.rect.top;
+                    self.crop.view.x = originRect.left - rect.left;
+                    self.crop.view.y = originRect.top - rect.top;
                 });
             }
         },
@@ -389,6 +464,7 @@
                       @mousedown.stop.self="cropMoveStart">
                 </span>
                 <span v-for="(line, index) in crop.lines"
+                      :data-target="`line-${line.direction}`"
                       :key="index"
                       :style="{
                         [`${line.size}`]: `${initStyle.borderWith}`,
@@ -396,6 +472,7 @@
                       }"
                       :class="['crop-line', `crop-${line.direction}`]"></span>
                 <span v-for="(point, index) in crop.points"
+                      :data-target="`point-${point.direction}`"
                       :key="index"
                       :style="{
                         width: `${initStyle.dotSize}`,
@@ -451,25 +528,25 @@
         opacity: .1;
     }
 
-    .crop-top {
+    .crop-n {
         top: 0;
         left: 0;
         cursor: n-resize;
     }
 
-    .crop-left {
+    .crop-w {
         left: 0;
         top: 0;
         cursor: w-resize;
     }
 
-    .crop-right {
+    .crop-e {
         top: 0;
         right: 0;
         cursor: e-resize;
     }
 
-    .crop-bottom {
+    .crop-s {
         left: 0;
         bottom: 0;
         cursor: s-resize;
