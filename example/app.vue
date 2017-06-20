@@ -6,7 +6,8 @@
                 background: false,
                 img: 'http://ofyaji162.bkt.clouddn.com/bg1.jpg',
                 initSize: {
-                    w: '60%'
+                    w: '300px',
+                    h: '200px'
                 },
                 imgMovable: false,
                 modal: false,

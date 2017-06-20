@@ -11,6 +11,12 @@ export default class Util {
         return  ev.clientX ? ev : ev.touches[0];
     }
 
+    static aspectRatio(aspectRatio) {
+        if (!!aspectRatio && toString.call(aspectRatio) == "[object String]") {
+            return aspectRatio.split(':');
+        }
+    }
+
     /**
      * 根据容器与图片原始大小信息，返回最终展示的大小
      *

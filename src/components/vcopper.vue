@@ -228,8 +228,11 @@
             createCropMove(ev) {
                 let self = this,
                     touch = Util.touches(ev),
-                    disX = ~~(touch.clientX - self.crop.coordinate.x),
-                    disY = ~~(touch.clientY - self.crop.coordinate.y),
+                    aspectRatio,
+                    clientX = touch.clientX,
+                    clientY = touch.clientY,
+                    disX,
+                    disY,
                     crop = {
                         width: 0,
                         height: 0,
@@ -237,9 +240,21 @@
                         cropY: 0
                     };
 
+                if (clientX < self.warpRect.left) clientX = self.warpRect.left;
+                if (clientX > self.warpRect.right) clientX = self.warpRect.right;
+                if (clientY < self.warpRect.top) clientY = self.warpRect.top;
+                if (clientY > self.warpRect.bottom) clientY = self.warpRect.bottom;
+
+                disX = ~~(clientX - self.crop.coordinate.x);
+                disY = ~~(clientY - self.crop.coordinate.y);
+                if (self.aspectRatio != 'free') {
+                    aspectRatio = Util.aspectRatio(self.aspectRatio);
+                    disY = ~~(disX*(aspectRatio[1]/aspectRatio[0]));
+                }
+
                 // 设置裁切框size
-                crop.width = Math.min(Math.abs(disX), self.warpRect.width);
-                crop.height = Math.min(Math.abs(disY), self.warpRect.height);
+                crop.width = Math.abs(disX);
+                crop.height = Math.abs(disY);
 
                 // 设置裁切框位移量
                 crop.cropX = disX >= 0 ? self.crop.create.originX : self.crop.create.originX + disX;
@@ -269,6 +284,7 @@
             resizeMove(ev) {
                 let self = this,
                     touch = Util.touches(ev),
+                    aspectRatio,
                     disX = ~~(touch.clientX - self.crop.coordinate.x),
                     disY = ~~(touch.clientY - self.crop.coordinate.y),
                     origin = {
@@ -284,18 +300,20 @@
                         cropY: origin.y
                     };
                 if (!disX && !disY) return;
-
                 if (self.aspectRatio != 'free') {
-                    let aspectRatio = self.aspectRatio.split(':');
-                    disY = ~~(disX*(aspectRatio[1]/aspectRatio[0]));
+                    aspectRatio = Util.aspectRatio(self.aspectRatio);
                 }
-                if (/w/.test(self.crop.resize.direction)) {
-                    let _width_ = origin.w - disX;
-                    crop.width = _width_ > 0 ? _width_ : Math.abs(disX) - origin.w;
-                    crop.cropX = _width_ > 0 ? origin.x + disX : origin.x + origin.w;
+
+                if (/s/.test(self.crop.resize.direction)) {
+                    let _height_ = origin.h + disY;
+                    crop.height = _height_ > 0 ? _height_ : Math.abs(_height_);
+                    crop.cropY = _height_ > 0 ? origin.y : origin.y - Math.abs(_height_);
                     if (self.aspectRatio != 'free') {
-                        crop.height = disX < 0 ? origin.h + Math.abs(disY) : origin.h - Math.abs(disY);
-                        crop.cropY = disX < 0 ? origin.y - Math.abs(disY)/2 : origin.y + Math.abs(disY)/2;
+                        let disX = ~~(disY*(aspectRatio[0]/aspectRatio[1]));
+                        crop.width = Math.abs(origin.w + disX);
+                        if (self.crop.resize.direction == 's') {
+                            crop.cropX = _height_ > 0 ? origin.x - disX/2 : origin.x + (origin.w - crop.width)/2;
+                        }
                     }
                 }
 
@@ -303,18 +321,39 @@
                     let _width_ = origin.w + disX;
                     crop.width = _width_ > 0 ? _width_ : Math.abs(_width_);
                     crop.cropX = _width_ > 0 ? origin.x : origin.x - Math.abs(_width_);
+                    if (self.aspectRatio != 'free') {
+                        let disY = ~~(disX*(aspectRatio[1]/aspectRatio[0]));
+                        crop.height = Math.abs(origin.h + disY);
+                        if (self.crop.resize.direction == 'e') {
+                            crop.cropY = _width_ > 0 ? origin.y - disY/2 : origin.y + (origin.h - crop.height)/2;
+                        }
+                    }
                 }
 
                 if (/n/.test(self.crop.resize.direction)) {
                     let _height_ = origin.h - disY;
                     crop.height = _height_ > 0 ? _height_ : Math.abs(disY) - origin.h;
                     crop.cropY = _height_ > 0 ? origin.y + disY : origin.y + origin.h;
+                    if (self.aspectRatio != 'free') {
+                        let disX = ~~(disY*(aspectRatio[0]/aspectRatio[1]));
+                        crop.width = Math.abs(origin.w - disX);
+                        if (self.crop.resize.direction == 'n') {
+                            crop.cropX = _height_ > 0 ? origin.x + disX/2 : origin.x + (origin.w - crop.width)/2;
+                        }
+                    }
                 }
 
-                if (/s/.test(self.crop.resize.direction)) {
-                    let _height_ = origin.h + disY;
-                    crop.height = _height_ > 0 ? _height_ : Math.abs(_height_);
-                    crop.cropY = _height_ > 0 ? origin.y : origin.y - Math.abs(_height_);
+                if (/w/.test(self.crop.resize.direction)) {
+                    let _width_ = origin.w - disX;
+                    crop.width = _width_ > 0 ? _width_ : Math.abs(disX) - origin.w;
+                    crop.cropX = _width_ > 0 ? origin.x + disX : origin.x + origin.w;
+                    if (self.aspectRatio != 'free') {
+                        let disY = ~~(disX*(aspectRatio[1]/aspectRatio[0]));
+                        crop.height = Math.abs(origin.h - disY);
+                        if (self.crop.resize.direction == 'w') {
+                            crop.cropY = _width_ > 0 ? origin.y + disY/2 : origin.y + (origin.h - crop.height)/2;
+                        }
+                    }
                 }
                 Util.setCrop.call(self, crop);
             },
