@@ -6,6 +6,7 @@
             return {
                 warpRect: null,
                 crop: { // 裁切框操作时相关的数据
+                    show: !!1,
                     create: {
                         able: false,
                         originX: 0,
@@ -239,7 +240,7 @@
                         cropX: 0,
                         cropY: 0
                     };
-
+                self.crop.show = !!1;
                 if (clientX < self.warpRect.left) clientX = self.warpRect.left;
                 if (clientX > self.warpRect.right) clientX = self.warpRect.right;
                 if (clientY < self.warpRect.top) clientY = self.warpRect.top;
@@ -247,6 +248,7 @@
 
                 disX = ~~(clientX - self.crop.coordinate.x);
                 disY = ~~(clientY - self.crop.coordinate.y);
+
                 if (self.aspectRatio != 'free') {
                     aspectRatio = Util.aspectRatio(self.aspectRatio);
                     disY = ~~(disX*(aspectRatio[1]/aspectRatio[0]));
@@ -259,6 +261,12 @@
                 // 设置裁切框位移量
                 crop.cropX = disX >= 0 ? self.crop.create.originX : self.crop.create.originX + disX;
                 crop.cropY = disY >=0 ? self.crop.create.originY : self.crop.create.originY + disY;
+
+                if (
+                    (disY >=0 && crop.height > self.warpRect.bottom - self.crop.coordinate.y) ||
+                    (disY <0 && crop.height > self.crop.coordinate.y - self.warpRect.top)
+                ) return;
+
                 Util.setCrop.call(self, crop);
             },
 
@@ -397,12 +405,28 @@
                     warp = refs['vue-cropper'];
                 self.warpRect = warp.getBoundingClientRect();
                 self.sourceImage.loaded = !!1;
+                self.crop.show = self.autoCrop;
                 self.sourceImage.width = img.naturalWidth;
                 self.sourceImage.height = img.naturalHeight;
                 self.sourceImage.aspectRatio = self.sourceImage.width / self.sourceImage.height;
                 Object.assign(self.sourceImage, Util.calculationSize(self.sourceImage, self.warpRect));
-                self.initSize.w = self.initSize.w || '50%';
-                self.initSize.h = self.initSize.h || '50%';
+                // 初始化size
+                (() => {
+                    self.initSize.w = self.initSize.w || '50%';
+                    self.initSize.h = self.initSize.h || '50%';
+                    if (self.aspectRatio != 'free') {
+                        let aspectRatio = Util.aspectRatio(self.aspectRatio);
+                        if (/%/.test(self.initSize.w) && !/%/.test(self.initSize.h)) {
+                            self.initSize.w = ~~parseInt(self.initSize.h)*aspectRatio[0]/aspectRatio[1] + 'px';
+                        } else {
+                            if (/%/.test(self.initSize.w)) {
+                                self.initSize.h = ~~parseInt(self.initSize.w)*aspectRatio[1]/aspectRatio[0] + '%';
+                            } else {
+                                self.initSize.h = ~~parseInt(self.initSize.w)*aspectRatio[1]/aspectRatio[0] + 'px';
+                            }
+                        }
+                    }
+                })();
                 self.initPosition.left = self.initPosition.left || '50%';
                 self.initPosition.top = self.initPosition.top || '50%';
                 self.sourceImage.translate.x = (self.warpRect.width - self.sourceImage.width)/2;
@@ -477,7 +501,7 @@
             </div>
             <div class="cropper-crop-box"
                  ref="crop-box"
-                 v-show="!!autoCrop && !!sourceImage.loaded"
+                 v-show="!!crop.show && !!sourceImage.loaded"
                  @mousedown="resizeStart"
                  @touchstart="resizeStart"
                  :style="{
@@ -499,8 +523,15 @@
                          class="view-img">
                 </span>
                 <span class="cropper-face"
+                      :style="{
+                        cursor: movable ? 'move' : 'not-allowed'
+                      }"
                       @touchstart.stop.self="cropMoveStart"
                       @mousedown.stop.self="cropMoveStart">
+                </span>
+                <span class="crop-info"
+                      v-text="`${crop.width} * ${crop.height}`"
+                      v-show="showSize">
                 </span>
                 <span v-for="(line, index) in crop.lines"
                       :data-target="`line-${line.direction}`"
@@ -509,7 +540,7 @@
                         [`${line.size}`]: `${initStyle.borderWith}`,
                         [`${line.direction}`]: `-${initStyle.borderWith}`
                       }"
-                      :class="['crop-line', `crop-${line.direction}`]"></span>
+                      :class="['crop-line', `crop-${line.direction}`, !resizable ? 'disable' : '']"></span>
                 <span v-for="(point, index) in crop.points"
                       :data-target="`point-${point.direction}`"
                       :key="index"
@@ -518,6 +549,7 @@
                         height: `${initStyle.dotSize}`,
                         background: `${initStyle.dotColor}`
                       }"
+                      v-show="resizable"
                       :class="['crop-point', `crop-point-${point.direction}`]"></span>
             </div>
         </div>
@@ -645,6 +677,10 @@
         cursor: w-resize;
     }
 
+    .disable.crop-line {
+        cursor: not-allowed;
+    }
+
     img {
         user-select: none;
     }
@@ -670,5 +706,17 @@
         width: 100%;
         height: 100%;
         background: rgba(255, 255, 255, .1);
+    }
+
+    .crop-info {
+        position: absolute;
+        left: 0;
+        min-width: 65px;
+        text-align: center;
+        color: white;
+        line-height: 20px;
+        background-color: rgba(0, 0, 0, 0.8);
+        font-size: 12px;
+        top: -21px;
     }
 </style>

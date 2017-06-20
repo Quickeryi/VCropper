@@ -8,7 +8,7 @@
  */
 export default class Util {
     static touches(ev) {
-        return  ev.clientX ? ev : ev.touches[0];
+        return ev.clientX != void 0 ? ev : ev.touches[0];
     }
 
     static aspectRatio(aspectRatio) {
